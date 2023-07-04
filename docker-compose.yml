@@ -28,11 +28,10 @@ services:
       - ${ROOT}/downloads:/downloads # downloads folder
       - ${ROOT}/config/deluge:/config # config files
 
-  jackett:
-    container_name: jackett
-    image: linuxserver/jackett:latest
+  prowlarr:
+    container_name: prowlarr
+    image: linuxserver/prowlarr:latest
     restart: unless-stopped
-    network_mode: host
     environment:
       - PUID=${PUID} # default user id, defined in .env
       - PGID=${PGID} # default group id, defined in .env
@@ -40,26 +39,28 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ${ROOT}/downloads/torrent-blackhole:/downloads # place where to put .torrent files for manual download
-      - ${ROOT}/config/jackett:/config # config files
+      - ${ROOT}/config/prowlarr:/config # config files
+    ports:
+      - 9696:9696
 
-  nzbget:
-    container_name: nzbget
-    image: linuxserver/nzbget:latest
+  sabnzb:
+    container_name: sabnzb
+    image: lscr.io/linuxserver/sabnzbd:latest
     restart: unless-stopped
-    network_mode: host
     environment:
       - PUID=${PUID} # default user id, defined in .env
       - PGID=${PGID} # default group id, defined in .env
       - TZ=${TZ} # timezone, defined in .env
     volumes:
       - ${ROOT}/downloads:/downloads # download folder
-      - ${ROOT}/config/nzbget:/config # config files
+      - ${ROOT}/config/sabnzb:/config # config files
+    ports:
+      - 8080:8080
 
   sonarr:
     container_name: sonarr
     image: linuxserver/sonarr:latest
     restart: unless-stopped
-    network_mode: host
     environment:
       - PUID=${PUID} # default user id, defined in .env
       - PGID=${PGID} # default group id, defined in .env
@@ -69,12 +70,13 @@ services:
       - ${ROOT}/config/sonarr:/config # config files
       - ${ROOT}/complete/tv:/tv # tv shows folder
       - ${ROOT}/downloads:/downloads # download folder
+    ports:
+      - 8989:8989 
 
   radarr:
     container_name: radarr
     image: linuxserver/radarr:latest
     restart: unless-stopped
-    network_mode: host
     environment:
       - PUID=${PUID} # default user id, defined in .env
       - PGID=${PGID} # default group id, defined in .env
@@ -84,24 +86,56 @@ services:
       - ${ROOT}/config/radarr:/config # config files
       - ${ROOT}/complete/movies:/movies # movies folder
       - ${ROOT}/downloads:/downloads # download folder
+    ports:
+      - 7878:7878
+
+  readarr:
+    image: lscr.io/linuxserver/readarr:develop
+    container_name: readarr
+    environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+      - TZ=${TZ} # timezone, defined in .env
+    volumes:
+      - ${ROOT}/config/readarr:/config # config files
+      - ${ROOT}/complete/books:/books # movies folder
+      - ${ROOT}/downloadclient-downloads:/downloads # download folder
+    ports:
+      - 8787:8787
+    restart: unless-stopped
+
 
   plex-server:
     container_name: plex-server
     image: plexinc/pms-docker:latest
     restart: unless-stopped
     environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
       - TZ=${TZ} # timezone, defined in .env
-    network_mode: host
+      - PLEX_CLAIM=${PLEX_CLAIM}
+      - VERSION=DOCKER
     volumes:
       - ${ROOT}/config/plex/db:/config # plex database
       - ${ROOT}/config/plex/transcode:/transcode # temp transcoded files
       - ${ROOT}/complete:/data # media library
+    # devices:
+    #   - /dev/dri:/dev/dri
+    ports:
+      - "32400:32400/tcp"
+      - "3005:3005/tcp"
+      - "8324:8324/tcp"
+      - "32469:32469/tcp"
+      - "1900:1900/udp"
+      - "32410:32410/udp"
+      - "32412:32412/udp"
+      - "32413:32413/udp"
+      - "32414:32414/udp"
 
   bazarr:
     container_name: bazarr
     image: linuxserver/bazarr
     restart: unless-stopped
-    network_mode: host
     environment:
       - PUID=${PUID} # default user id, defined in .env
       - PGID=${PGID} # default group id, defined in .env
@@ -111,3 +145,47 @@ services:
       - ${ROOT}/config/bazarr:/config # config files
       - ${ROOT}/complete/movies:/movies # movies folder
       - ${ROOT}/complete/tv:/tv # tv shows folder
+    ports:
+      - 6767:6767
+
+  organizr:
+    container_name: organizr
+    image: organizr/organizr
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+      - fpm=true #true or false | using true will provide better performance
+      - branch=v2-master #v2-master or #v2-develop
+    ports:
+      - 80:80
+    volumes:
+      - ${ROOT}/config/organizr:/config
+
+  overseerr:
+    image: lscr.io/linuxserver/overseerr:latest
+    container_name: overseerr
+    environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+      - TZ=${TZ} # timezone, defined in .env
+    volumes:
+      - ${ROOT}/config/overseerr:/config
+    ports:
+      - 5055:5055
+    restart: unless-stopped
+
+  code-server:
+    image: lscr.io/linuxserver/code-server:latest
+    container_name: code-server
+    environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+      - TZ=${TZ} # timezone, defined in .env
+      - PASSWORD=Sagenlaan36
+      - SUDO_PASSWORD=Sagenlaan36
+    volumes:
+      - /opt/codeserver/config:/config
+    ports:
+      - 8443:8443
+    restart: unless-stopped
